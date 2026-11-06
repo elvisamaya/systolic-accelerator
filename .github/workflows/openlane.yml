@@ -1,0 +1,40 @@
+name: openlane
+
+# RTL -> GDSII on SkyWater 130nm with OpenLane 2. It takes a while, so it runs
+# only when started by hand: Actions tab -> openlane -> Run workflow.
+on:
+  workflow_dispatch:
+
+jobs:
+  layout:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install OpenLane 2
+        run: pip install openlane==2.3.10
+
+      - name: Synthesis, floorplan, placement, clock tree, routing, signoff
+        run: openlane --dockerized openlane/config.json
+
+      - name: Summary
+        if: always()
+        run: python3 scripts/openlane_summary.py openlane/runs >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload layout and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openlane-results
+          path: |
+            openlane/runs/*/final/gds/
+            openlane/runs/*/final/metrics.json
+            openlane/runs/*/final/metrics.csv
+            openlane/runs/**/*.png
+            openlane/runs/*/flow.log
+            openlane/runs/*/error.log
