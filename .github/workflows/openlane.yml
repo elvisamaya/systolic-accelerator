@@ -6,6 +6,10 @@ on:
   workflow_dispatch:
   push:
     branches: [openlane-check]
+    paths: ['scripts/render_layout.py']
+
+permissions:
+  contents: write
 
 jobs:
   layout:
@@ -25,9 +29,12 @@ jobs:
       - name: Synthesis, floorplan, placement, clock tree, routing, signoff
         run: script -q -e -c "openlane --dockerized openlane/config.json" /dev/null
 
+      - name: Render the layout to a picture
+        run: python3 scripts/render_layout.py openlane/runs/*/final/gds/accel_chip.gds layout.png
+
       - name: Summary
         if: always()
-        run: python3 scripts/openlane_summary.py openlane/runs >> "$GITHUB_STEP_SUMMARY"
+        run: python3 scripts/openlane_summary.py openlane/runs | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Upload layout and reports
         if: always()
@@ -35,9 +42,21 @@ jobs:
         with:
           name: openlane-results
           path: |
+            layout.png
             openlane/runs/*/final/gds/
             openlane/runs/*/final/metrics.json
             openlane/runs/*/final/metrics.csv
             openlane/runs/**/*.png
             openlane/runs/*/flow.log
             openlane/runs/*/error.log
+
+      - name: Save results to this branch (temporary)
+        run: |
+          mkdir -p ol-results
+          cp layout.png ol-results/
+          cp openlane/runs/*/final/metrics.json ol-results/
+          git config user.name elvisamaya
+          git config user.email elvisamaya426@gmail.com
+          git add ol-results
+          git commit -m "temporary: OpenLane results"
+          git push
