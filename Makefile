@@ -4,6 +4,7 @@
 #   make unit         unit tests: PE, array (N=2,4,8), accelerator (N=4,8)
 #   make regress      random regression vs the NumPy golden model
 #   make soc          RISC-V + accelerator SoC: accelerated vs software matmul
+#   make nn           int8 neural network (digits) running on the accelerator
 #   make clean
 
 IVERILOG := iverilog -g2012 -Wall -Wno-timescale -Wno-sensitivity-entire-array -I rtl -I rtl/soc
@@ -14,12 +15,12 @@ BUILD    := build
 ACCEL_RTL := rtl/pe.v rtl/systolic_array.v rtl/accel.v
 SOC_RTL   := $(wildcard rtl/soc/*.v) $(ACCEL_RTL)
 
-.PHONY: all test unit regress soc clean
+.PHONY: all test unit regress soc nn clean
 .SECONDARY:
 
 all: test
 
-test: unit regress soc
+test: unit regress soc nn
 	@echo ""
 	@echo "All tests passed."
 
@@ -59,6 +60,11 @@ $(BUILD)/%.hex: programs/%.s scripts/rvasm.py | $(BUILD)
 soc: $(BUILD)/tb_soc.vvp $(BUILD)/matmul_accel.hex $(BUILD)/matmul_sw.hex
 	@echo "=== soc ==="
 	@$(PY) scripts/soc_bench.py --build $(BUILD)
+
+# ---------------------------------------------------------------- neural network
+nn: $(BUILD)/tb_accel_jobs_n4.vvp
+	@echo "=== nn ==="
+	@$(PY) scripts/nn_demo.py --build $(BUILD)
 
 $(BUILD):
 	@mkdir -p $(BUILD)
