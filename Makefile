@@ -1,11 +1,12 @@
 # Systolic-array matrix-multiply accelerator: build and test flow
 #
-#   make              run all tests
+#   make              run everything below except synth
 #   make unit         unit tests: PE, array (N=2,4,8), accelerator (N=4,8)
 #   make regress      random regression vs the NumPy golden model
 #   make soc          RISC-V + accelerator SoC: accelerated vs software matmul
 #   make nn           int8 neural network (digits) running on the accelerator
 #   make synth        synthesize to SkyWater 130nm cells: area + timing table
+#   make lint         Verilator -Wall lint
 #   make clean
 
 IVERILOG := iverilog -g2012 -Wall -Wno-timescale -Wno-sensitivity-entire-array -I rtl -I rtl/soc
@@ -19,7 +20,7 @@ SOC_RTL   := $(wildcard rtl/soc/*.v) $(ACCEL_RTL)
 LIB_URL  := https://raw.githubusercontent.com/The-OpenROAD-Project/OpenROAD-flow-scripts/master/flow/platforms/sky130hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
 LIB      := $(BUILD)/sky130_fd_sc_hd__tt_025C_1v80.lib
 
-.PHONY: all test unit regress soc nn synth clean
+.PHONY: all test unit regress soc nn synth lint clean
 .SECONDARY:
 
 all: test
@@ -77,6 +78,12 @@ $(LIB): | $(BUILD)
 synth: $(LIB)
 	@echo "=== synth (SkyWater 130nm, sky130_fd_sc_hd, typical corner) ==="
 	@$(PY) scripts/synth_report.py --lib $(LIB) --build $(BUILD) | tee $(BUILD)/synth_table.md
+
+# ---------------------------------------------------------------- lint
+lint:
+	verilator --lint-only -Wall -Irtl $(ACCEL_RTL) --top-module accel
+	verilator --lint-only -Wall -Irtl -GN=8 $(ACCEL_RTL) --top-module accel
+	verilator --lint-only -Wall -Irtl -Irtl/soc $(SOC_RTL) --top-module soc
 
 $(BUILD):
 	@mkdir -p $(BUILD)
