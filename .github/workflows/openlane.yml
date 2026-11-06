@@ -4,6 +4,8 @@ name: openlane
 # only when started by hand: Actions tab -> openlane -> Run workflow.
 on:
   workflow_dispatch:
+  push:
+    branches: [openlane-check]
 
 jobs:
   layout:
