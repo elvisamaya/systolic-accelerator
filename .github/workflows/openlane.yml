@@ -21,8 +21,9 @@ jobs:
       - name: Install OpenLane 2
         run: pip install openlane==2.3.10
 
+      # `script` provides a pseudo-terminal: --dockerized expects one and CI has none
       - name: Synthesis, floorplan, placement, clock tree, routing, signoff
-        run: openlane --dockerized openlane/config.json
+        run: script -q -e -c "openlane --dockerized openlane/config.json" /dev/null
 
       - name: Summary
         if: always()
