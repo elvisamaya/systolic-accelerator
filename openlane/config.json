@@ -1,0 +1,13 @@
+{
+    "DESIGN_NAME": "accel_chip",
+    "VERILOG_FILES": [
+        "dir::../rtl/pe.v",
+        "dir::../rtl/systolic_array.v",
+        "dir::../rtl/accel.v",
+        "dir::accel_chip.v"
+    ],
+    "CLOCK_PORT": "clk",
+    "CLOCK_PERIOD": 10,
+    "FP_CORE_UTIL": 40,
+    "PL_TARGET_DENSITY_PCT": 50
+}

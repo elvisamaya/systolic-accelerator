@@ -5,6 +5,7 @@
 #   make regress      random regression vs the NumPy golden model
 #   make soc          RISC-V + accelerator SoC: accelerated vs software matmul
 #   make nn           int8 neural network (digits) running on the accelerator
+#   make synth        synthesize to SkyWater 130nm cells: area + timing table
 #   make clean
 
 IVERILOG := iverilog -g2012 -Wall -Wno-timescale -Wno-sensitivity-entire-array -I rtl -I rtl/soc
@@ -15,7 +16,10 @@ BUILD    := build
 ACCEL_RTL := rtl/pe.v rtl/systolic_array.v rtl/accel.v
 SOC_RTL   := $(wildcard rtl/soc/*.v) $(ACCEL_RTL)
 
-.PHONY: all test unit regress soc nn clean
+LIB_URL  := https://raw.githubusercontent.com/The-OpenROAD-Project/OpenROAD-flow-scripts/master/flow/platforms/sky130hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+LIB      := $(BUILD)/sky130_fd_sc_hd__tt_025C_1v80.lib
+
+.PHONY: all test unit regress soc nn synth clean
 .SECONDARY:
 
 all: test
@@ -65,6 +69,14 @@ soc: $(BUILD)/tb_soc.vvp $(BUILD)/matmul_accel.hex $(BUILD)/matmul_sw.hex
 nn: $(BUILD)/tb_accel_jobs_n4.vvp
 	@echo "=== nn ==="
 	@$(PY) scripts/nn_demo.py --build $(BUILD)
+
+# ---------------------------------------------------------------- synthesis
+$(LIB): | $(BUILD)
+	curl -sSfL -o $@ $(LIB_URL)
+
+synth: $(LIB)
+	@echo "=== synth (SkyWater 130nm, sky130_fd_sc_hd, typical corner) ==="
+	@$(PY) scripts/synth_report.py --lib $(LIB) --build $(BUILD) | tee $(BUILD)/synth_table.md
 
 $(BUILD):
 	@mkdir -p $(BUILD)
