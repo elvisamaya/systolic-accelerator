@@ -1,7 +1,7 @@
 # Systolic-array matrix-multiply accelerator: build and test flow
 #
 #   make              run all tests
-#   make unit         unit tests: PE
+#   make unit         unit tests: PE, array (N=2,4,8)
 #   make clean
 
 IVERILOG := iverilog -g2012 -Wall -Wno-timescale -Wno-sensitivity-entire-array -I rtl
@@ -28,6 +28,9 @@ endef
 
 unit: | $(BUILD)
 	$(call unit_test,tb_pe,,tb/tb_pe.v rtl/pe.v)
+	$(call unit_test,tb_array_n2,-DN=2,tb/tb_array.v rtl/pe.v rtl/systolic_array.v)
+	$(call unit_test,tb_array_n4,-DN=4,tb/tb_array.v rtl/pe.v rtl/systolic_array.v)
+	$(call unit_test,tb_array_n8,-DN=8,tb/tb_array.v rtl/pe.v rtl/systolic_array.v)
 
 $(BUILD):
 	@mkdir -p $(BUILD)
